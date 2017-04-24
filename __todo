@@ -1,0 +1,7 @@
+- sync:
+    - wunderlist.data.json
+    - sync tasks:
+    - analysis:
+        - by day: created, completed
+        - by week: created, completed
+        - export data: csv

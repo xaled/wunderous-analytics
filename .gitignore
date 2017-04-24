@@ -1,3 +1,12 @@
+# added
+.idea/
+*.log
+*.data.json
+*.config.json
+*.data.csv
+*~
+.~lock.*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
