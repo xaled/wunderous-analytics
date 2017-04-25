@@ -36,7 +36,7 @@ def parse_tasks(tasks, span="day"):
             completed_day = parse_day(task["completed_at"])
             if not completed_day in data_obj:
                 data_obj[completed_day] = [0, 0]
-                data_obj[completed_day][1]+=1
+            data_obj[completed_day][1]+=1
     lst = [[d,v[0],v[1]] for d,v in data_obj.items()]
     # TODO: sort and fill gap
     return lst
