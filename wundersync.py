@@ -1,31 +1,39 @@
+#!/usr/bin/python
+
 import requests
 import json
+import utils
+import argparse
+import logging
+import csv
+import time
 
-AUTH_CONFIG_FILE = "auth.config.json"
-TASKS_FILE = "tasks.data.json"
-DAY_CSV_FILE = "day.data.csv"
-WEEK_CSV_FILE = "week.data.csv"
-fin = open(AUTH_CONFIG_FILE)
-authconfig = json.load(fin)
-access_token = authconfig['access_token']
-client_id = authconfig['client_id']
-headers={'X-Access-Token': access_token, 'X-Client-ID': client_id, 'Content-Type' : 'application/json'}
+CONFIG_FILE = "wunderous.config.json"
+CSV_HEADER = ['timestamp','date','created','completed', 'inbox_count']
+
+
 
 def save_json(data, filepath):
     with open(filepath,'w') as fou:
         json.dump(data, fou, indent=3)
-def save_csv(lst, filepath, headers=None):
+
+def save_csv(lst, filepath, headers=CSV_HEADER):
     with open(filepath,'w') as fou:
-        if not headers is None:
-            fou.write(",".join(['"'+('%s'%h).replace("\\","\\\\").replace("\"","\\\"")+'"' for h in headers]) + "\n")
+        csvwriter = csv.writer(fou)
+        csvwriter.writerow(headers)
         for row in lst:
-            fou.write(",".join(['"'+('%s'%cell).replace("\\","\\\\").replace("\"","\\\"")+'"' for cell in row]) + "\n")
+            csvwriter.writerow([str(item) for item in row])
+def output_list(lst, headers=CSV_HEADER):
+    print '\t'.join(headers)
+    for row in lst:
+        print '\t'.join([str(item) for item in row])
+
 def parse_day(date):
-    return date[:10]
+    return int(utils.iso8601_to_epoch(date))/(86400)*(86400)
 
 
 
-def parse_tasks(tasks, span="day"):
+def parse_tasks(tasks):
     data_obj = dict()
     for task in tasks:
         created_day = parse_day(task["created_at"])
@@ -37,13 +45,24 @@ def parse_tasks(tasks, span="day"):
             if not completed_day in data_obj:
                 data_obj[completed_day] = [0, 0]
             data_obj[completed_day][1]+=1
-    lst = [[d,v[0],v[1]] for d,v in data_obj.items()]
-    # TODO: sort and fill gap
-    return lst
+    #lst = [[d, utils.epoch_to_iso8601(d)[:10], v[0],v[1]] for d,v in data_obj.items()]
+    lst = sorted(data_obj.keys()) # sorted days from
+    lst2 = list()
+    inbox_count = 0
+    for d in range(lst[0],int(time.time()), 86400):
+        if d in data_obj:
+            v = data_obj[d]
+            inbox_count = inbox_count+v[0]-v[1]
+            lst2.append([d, utils.epoch_to_iso8601(d)[:10], v[0], v[1], inbox_count])
+        else:
+            lst2.append([d, utils.epoch_to_iso8601(d)[:10], 0, 0, inbox_count])
+    return lst2
 
 def get_inbox_list_id():
-    if "inbox_id" in authconfig:
-        return authconfig["inbox_id"]
+
+    if "inbox_id" in config:
+        return config["inbox_id"]
+    logging.debug('getting inbox list_id')
     f = requests.get('https://a.wunderlist.com/api/v1/lists', headers=headers)
     lists = json.load(f.content)
     for l in lists:
@@ -56,23 +75,49 @@ def get_tasks(list_id, completed=None):
     else:
         params={'list_id':list_id, 'completed':completed}
     f = requests.get('https://a.wunderlist.com/api/v1/tasks', headers=headers, params=params )
-    return json.loads(f.content)
+    ret = json.loads(f.content)
+    logging.debug('got %d %s tasks from list: %d', len(ret), ("completed" if completed else "not completed"), list_id)
+    return ret
 
-def get_all_tasks(list_id=None, all_lists=False):
+def get_all_tasks(list_id=None):
     if list_id is None:
         list_id = get_inbox_list_id()
     new_tasks = get_tasks(list_id)
     completed_tasks = get_tasks(list_id, completed=True)
     return new_tasks  + completed_tasks
 
-def main():
+def load_configs(config_file):
+    global headers, config
+    fin = open(config_file)
+    config = json.load(fin)['wunderlist']
+    access_token = config['access_token']
+    client_id = config['client_id']
+    headers = {'X-Access-Token': access_token, 'X-Client-ID': client_id, 'Content-Type': 'application/json'}
+
+def main(args):
+    load_configs(args.config_file)
+    logging.info("getting tasks")
     tasks = get_all_tasks()
-    save_json(tasks, TASKS_FILE)
-    list_day = parse_tasks(tasks, span="day")
-    save_csv(list_day, DAY_CSV_FILE)
-    #list_week = parse_tasks(tasks, span="week")
-    #save_csv(list_week, WEEK_CSV_FILE)
+    logging.info("got %d task", len(tasks))
+    list_day = parse_tasks(tasks)
+    if not args.json_output is None:
+        save_json(tasks, args.json_output)
+    if not args.csv_output is None:
+        save_csv(list_day, args.csv_output)
+    else:
+        output_list(list_day)
 
 
 if __name__=="__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Wunderlist parse and export')
+    parser.add_argument('-C', '--config-file', default=CONFIG_FILE,  action='store', help='Config file')
+    parser.add_argument('-j', '--json-output', action='store', help='json output')
+    parser.add_argument('-c', '--csv-output', action='store', help='csv output')
+    parser.add_argument('-d', '--debug', action="store_true", help='debugging logs')
+    args = parser.parse_args()
+    print args
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+    main(args)

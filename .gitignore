@@ -1,9 +1,8 @@
 # added
 .idea/
 *.log
-*.data.json
-*.config.json
-*.data.csv
+*.json
+*.csv
 *~
 .~lock.*
 

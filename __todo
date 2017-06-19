@@ -5,3 +5,17 @@
         - by day: created, completed
         - by week: created, completed
         - export data: csv
+
+
+
+graphs:
+- work hours
+- habbits
+- tasks
+- money
+- quran
+views:
+- per day, week, month
+- per weekdays
+- last week, last month, last year, all time
+- VS view (auto & manual)
