@@ -7,8 +7,9 @@ import argparse
 import logging
 import csv
 import time
+import os
 
-CONFIG_FILE = "wunderous.config.json"
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "wunderous.config.json")
 CSV_HEADER = ['timestamp','date','created','completed', 'inbox_count']
 
 

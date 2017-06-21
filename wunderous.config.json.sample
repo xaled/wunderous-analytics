@@ -1,7 +1,13 @@
 {
   "wunderlist": {
     "access_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "client_id": "xxxxxxxxxxxxxxxxx",
-    "inbox_id": 1234
+    "client_id": "xxxxxxxxxxxxxxxxxxxxxxx",
+    "inbox_id": 293751215
+  },
+  "drive": {
+    "client_id" : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+    "client_secret" : "xxxxxxxxxxxxxxxxxxx",
+    "file_id" : "xxxxxxxxxxxxxxxxxxxx",
+    "filename": "xxxxxxxxxxxxx"
   }
 }
