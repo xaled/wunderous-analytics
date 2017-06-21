@@ -14,20 +14,7 @@ CSV_HEADER = ['timestamp','date','created','completed', 'inbox_count']
 
 
 
-def save_json(data, filepath):
-    with open(filepath,'w') as fou:
-        json.dump(data, fou, indent=3)
 
-def save_csv(lst, filepath, headers=CSV_HEADER):
-    with open(filepath,'w') as fou:
-        csvwriter = csv.writer(fou)
-        csvwriter.writerow(headers)
-        for row in lst:
-            csvwriter.writerow([str(item) for item in row])
-def output_list(lst, headers=CSV_HEADER):
-    print '\t'.join(headers)
-    for row in lst:
-        print '\t'.join([str(item) for item in row])
 
 def parse_day(date):
     return int(utils.iso8601_to_epoch(date))/(86400)*(86400)
@@ -102,11 +89,11 @@ def main(args):
     logging.info("got %d task", len(tasks))
     list_day = parse_tasks(tasks)
     if not args.json_output is None:
-        save_json(tasks, args.json_output)
+        utils.save_json(tasks, args.json_output)
     if not args.csv_output is None:
-        save_csv(list_day, args.csv_output)
+        utils.save_csv(list_day, args.csv_output, CSV_HEADER)
     else:
-        output_list(list_day)
+        utils.output_list(list_day, CSV_HEADER)
 
 
 if __name__=="__main__":
