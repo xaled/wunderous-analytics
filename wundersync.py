@@ -5,7 +5,6 @@ import json
 import utils
 import argparse
 import logging
-import csv
 import time
 import os
 
