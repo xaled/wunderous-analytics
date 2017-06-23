@@ -20,6 +20,10 @@ def rewire_to_epoch(str_time):
     time_tuple = strptime(str_time+"/UTC", "%d/%m/%Y/%Z")
     return mktime(time_tuple) - timezone
 
+def weeksheet_to_epoch(str_date):
+    time_tuple = strptime(str_date+"/UTC", "%d%b%Y/%Z")
+    return mktime(time_tuple) - timezone
+
 
 def save_json(data, filepath):
     with open(filepath,'w') as fou:
