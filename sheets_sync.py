@@ -4,11 +4,12 @@ import json
 from drive import get_sheet_values, get_sheet_metadata
 import csv
 import argparse
-import logging
 import utils
 import time
 import re
 
+import logging
+logger = logging.getLogger(__name__)
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "wunderous.config.json")
 SHEETS_DATA = os.path.join(os.path.dirname(__file__), "sheets.data.json")
@@ -21,6 +22,7 @@ DAY = 86400
 WEEK = DAY * 7
 WEEK_OFFSET = 3
 MAX_ERROR = 4
+
 
 
 def load_configs(config_file):
@@ -64,12 +66,13 @@ def parse_work_hours_daily(data):
 
 def get_work_hours(work_hours_sheet_id, sheet_regex, data):
     sheets = [ str(sh['properties']['title']) for sh in get_sheet_metadata(work_hours_sheet_id)['sheets'] ]
-    logging.debug("sheets: %s", sheets)
+    logger.debug("sheets: %s", sheets)
     for sheet in sheets:
         #w = w0 - i * WEEK
         #week = _format_week(w)
         match_ = re.match(sheet_regex, sheet)
         if match_:
+            logger.debug("trying to extract sheet: %s", sheet)
             try:
                 range_ = "'%s'!B2:O2" % sheet
                 w = int(utils.weeksheet_to_epoch(match_.group(1)))
@@ -81,14 +84,14 @@ def get_work_hours(work_hours_sheet_id, sheet_regex, data):
                     except:
                         data['work_hours'][str(w + j * DAY)] = 0.0
             except Exception as e:
-                logging.error("Error trying to get data from sheet %s : %s", sheet, str(e), exc_info=True)
+                logger.error("Error trying to get data from sheet %s : %s", sheet, str(e), exc_info=True)
 
     return data
 
 
 def main(args):
     data = load_old_entries()
-
+    logger.debug("there is already %d entries.", len(data))
     work_hours_sheet_id, sheet_regex = load_configs(CONFIG_FILE)
     if not args.no_download:
         data = get_work_hours(work_hours_sheet_id, sheet_regex, data)

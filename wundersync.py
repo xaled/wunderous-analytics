@@ -8,12 +8,19 @@ import logging
 import time
 import os
 
+TASKS_DATA = os.path.join(os.path.dirname(__file__), "tasks.json")
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "wunderous.config.json")
 CSV_HEADER = ['timestamp','date','created','completed', 'inbox_count']
 
 
 
 
+
+def load_old_entries(sheet_data):
+    if os.path.exists(sheet_data):
+        with open(sheet_data) as fin:
+            return json.load(fin)
+    return []
 
 def parse_day(date):
     return int(utils.iso8601_to_epoch(date))/(86400)*(86400)
@@ -81,11 +88,43 @@ def load_configs(config_file):
     client_id = config['client_id']
     headers = {'X-Access-Token': access_token, 'X-Client-ID': client_id, 'Content-Type': 'application/json'}
 
+def filter_routines(tasks):
+    routines_set = set()
+    to_remove = list()
+    for task in tasks:
+        if task['completed'] and  '#routine' in  task['title'].split():
+            key_ = task['title'] + '.' + task['completed_at'][:10]
+            if key_ in routines_set:
+                to_remove.append(task)
+            else:
+                routines_set.add(key_)
+    res = list(tasks)
+    print len(res)
+    for task in to_remove:
+        res.remove(task)
+    logging.info("removed %d duplicate routine entry from data"%len(to_remove))
+    print len(res)
+    return res
+
+def _merge(tasks1, tasks2):
+    tasks = list(tasks1)
+    ids = [t['id'] for t in tasks]
+    for task in tasks2:
+        if not task['id'] in ids:
+            tasks.append(task)
+    return tasks
+
 def main(args):
+    data = load_old_entries(args.json_output)
     load_configs(args.config_file)
-    logging.info("getting tasks")
-    tasks = get_all_tasks()
-    logging.info("got %d task", len(tasks))
+    if not args.no_download:
+        logging.info("getting tasks")
+        tasks = get_all_tasks()
+        logging.info("got %d task", len(tasks))
+    else:
+        tasks = []
+    tasks = _merge(data, tasks)
+    tasks = filter_routines(tasks)
     list_day = parse_tasks(tasks)
     if not args.json_output is None:
         utils.save_json(tasks, args.json_output)
@@ -98,9 +137,10 @@ def main(args):
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Wunderlist parse and export')
     parser.add_argument('-C', '--config-file', default=CONFIG_FILE,  action='store', help='Config file')
-    parser.add_argument('-j', '--json-output', action='store', help='json output')
+    parser.add_argument('-j', '--json-output', default=TASKS_DATA, action='store', help='json output')
     parser.add_argument('-c', '--csv-output', action='store', help='csv output')
     parser.add_argument('-d', '--debug', action="store_true", help='debugging logs')
+    parser.add_argument('--no-download', action="store_true", help='don\'t download rewire export from drive')
     args = parser.parse_args()
     print args
     if args.debug:
