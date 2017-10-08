@@ -57,7 +57,7 @@ def parse_work_hours_daily(data):
         if str(d) in data:
             lst.append([d, utils.epoch_to_iso8601(d)[:10], data[str(d)]])
         else:
-            lst.append([d, utils.epoch_to_iso8601(d)[:10], 0])
+            lst.append([d, utils.epoch_to_iso8601(d)[:10], 0.0])
     return lst
 
 
@@ -77,9 +77,9 @@ def get_work_hours(work_hours_sheet_id, sheet_regex, data):
                 values = ret['values'][0]
                 for j in range(7):
                     try:
-                        data['work_hours'][str(w + j * DAY)] = int(values[j * 2 + 1])
+                        data['work_hours'][str(w + j * DAY)] = float(values[j * 2 + 1])
                     except:
-                        data['work_hours'][str(w + j * DAY)] = 0
+                        data['work_hours'][str(w + j * DAY)] = 0.0
             except Exception as e:
                 logging.error("Error trying to get data from sheet %s : %s", sheet, str(e), exc_info=True)
 
