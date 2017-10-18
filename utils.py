@@ -14,6 +14,13 @@ def iso8601_to_epoch(iso_str):
     time_tuple = strptime(str_time+"UTC", "%Y-%m-%dT%H:%M:%S%Z")
     return mktime(time_tuple) - timezone + mlsec
 
+def iso8601date_to_epoch(iso_str):
+    time_tuple = strptime(iso_str, "%Y-%m-%d")
+    return mktime(time_tuple) - timezone
+
+def epoch_to_iso8601date(timestamp):
+    iso_str = strftime("%Y-%m-%d", gmtime(timestamp))
+    return iso_str
 
 
 def rewire_to_epoch(str_time):
