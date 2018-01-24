@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+from __future__ import print_function
 import os
 import json
 from drive import download_file
@@ -109,7 +110,7 @@ if __name__=="__main__":
     parser.add_argument('-d', '--debug', action="store_true", help='debugging logs')
     parser.add_argument('--no-download', action="store_true", help='don\'t download rewire export from drive')
     args = parser.parse_args()
-    print args
+    print(args)
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
     else:

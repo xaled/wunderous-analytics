@@ -1,14 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+from __future__ import print_function
 import os
 import json
-from drive import get_sheet_values, get_sheet_metadata
-import csv
 import argparse
-import utils
 import time
 import re
-
 import logging
+
+from wunderous.drive import get_sheet_values, get_sheet_metadata
+from wunderous.utils import save_csv, save_json, output_list, weeksheet_to_epoch, epoch_to_iso8601
+from wunderous.config import config
 logger = logging.getLogger(__name__)
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "wunderous.config.json")
@@ -24,11 +25,7 @@ WEEK_OFFSET = 3
 MAX_ERROR = 4
 
 
-
-def load_configs(config_file):
-    global headers, config
-    fin = open(config_file)
-    config = json.load(fin)['drive']
+def load_configs():
     work_hours_sheet_id = config['work_hours_sheet_id']
     sheet_regex = config['sheet_regex']
     return work_hours_sheet_id, sheet_regex
@@ -57,9 +54,9 @@ def parse_work_hours_daily(data):
     lst= []
     for d in range(earlier_day, int(time.time()), DAY):
         if str(d) in data:
-            lst.append([d, utils.epoch_to_iso8601(d)[:10], data[str(d)]])
+            lst.append([d, epoch_to_iso8601(d)[:10], data[str(d)]])
         else:
-            lst.append([d, utils.epoch_to_iso8601(d)[:10], 0.0])
+            lst.append([d, epoch_to_iso8601(d)[:10], 0.0])
     return lst
 
 
@@ -75,7 +72,7 @@ def get_work_hours(work_hours_sheet_id, sheet_regex, data):
             logger.debug("trying to extract sheet: %s", sheet)
             try:
                 range_ = "'%s'!B2:O2" % sheet
-                w = int(utils.weeksheet_to_epoch(match_.group(1)))
+                w = int(weeksheet_to_epoch(match_.group(1)))
                 ret = get_sheet_values(work_hours_sheet_id, range_)
                 values = ret['values'][0]
                 for j in range(7):
@@ -92,27 +89,27 @@ def get_work_hours(work_hours_sheet_id, sheet_regex, data):
 def main(args):
     data = load_old_entries()
     logger.debug("there is already %d entries.", len(data))
-    work_hours_sheet_id, sheet_regex = load_configs(CONFIG_FILE)
+    work_hours_sheet_id, sheet_regex = load_configs()
     if not args.no_download:
         data = get_work_hours(work_hours_sheet_id, sheet_regex, data)
     list_day = parse_work_hours_daily(data['work_hours'])
     if not args.json_output is None:
-        utils.save_json(data, args.json_output)
+        save_json(data, args.json_output)
     if not args.csv_output is None:
-        utils.save_csv(list_day, args.csv_output, CSV_HEADER)
+        save_csv(list_day, args.csv_output, CSV_HEADER)
     else:
-        utils.output_list(list_day, CSV_HEADER)
+        output_list(list_day, CSV_HEADER)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='rewire parse and export')
-    parser.add_argument('-C', '--config-file', default=CONFIG_FILE, action='store', help='Config file')
+    # parser.add_argument('-C', '--config-file', default=CONFIG_FILE, action='store', help='Config file')
     parser.add_argument('-j', '--json-output', default=SHEETS_DATA, action='store', help='json output')
     parser.add_argument('-c', '--csv-output', action='store', help='csv output')
     parser.add_argument('-d', '--debug', action="store_true", help='debugging logs')
     parser.add_argument('--no-download', action="store_true", help='don\'t download rewire export from drive')
     args = parser.parse_args()
-    print args
+    print(args)
     SHEETS_DATA = args.json_output
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)

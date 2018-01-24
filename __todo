@@ -1,13 +1,18 @@
 - rewards:
-    - zapuno restore
+    - zapuno restore:
+        x sync sheet restore
+        x rewire_sync fix
     - ‎week sync cron
+    - add reward
+    - github
     - ‎habithub to rewards
     - ‎week to how.ods
-    - ‎weekbti trends
+    - ‎weeks trends
     - ‎week create, backup and delete
-    - ‎wunder rewards
-    - ‎wunder duedates reschedule
-    - github
+    - ‎wunder:
+        - fix & migrate
+        - rewards
+        - ‎wunder duedates reschedule
 - Future rewards:
     - github / blog rewards
     - q rewards
