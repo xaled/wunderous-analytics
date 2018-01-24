@@ -30,6 +30,16 @@ def epoch_to_iso8601date(timestamp):
     return iso_str
 
 
+def epoch_to_how_ods(timestamp):
+    iso_str = strftime("%a, %d, %b %Y", gmtime(timestamp))
+    return iso_str
+
+
+def epoch_to_reward(timestamp):
+    iso_str = strftime("%d-%b-%Y", gmtime(timestamp))
+    return iso_str
+
+
 def rewire_to_epoch(str_time):
     time_tuple = strptime(str_time + "/UTC", "%d/%m/%Y/%Z")
     return mktime(time_tuple) - timezone

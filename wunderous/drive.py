@@ -16,10 +16,10 @@ sheet_service = None
 drive_service = None
 
 
-def load_configs():
-    client_secret = config['client_secret']
-    client_id = config['client_id']
-    return client_id, client_secret
+# def load_configs():
+#     client_secret = config['client_secret']
+#     client_id = config['client_id']
+#     return client_id, client_secret
 
 
 def init_drive_service():
@@ -31,8 +31,8 @@ def init_drive_service():
 
     if credentials is None:
         # Run through the OAuth flow and retrieve credentials
-        client_id, client_secret = load_configs()
-        flow = OAuth2WebServerFlow(client_id, client_secret, OAUTH_SCOPE, REDIRECT_URI)
+        # client_id, client_secret = load_configs()
+        flow = OAuth2WebServerFlow(config['drive']['client_id'], config['drive']['client_secret'], OAUTH_SCOPE, REDIRECT_URI)
         authorize_url = flow.step1_get_authorize_url()
         print('Go to the following link in your browser: ' + authorize_url)
         code = input('Enter verification code: ').strip()
@@ -56,8 +56,8 @@ def init_sheet_service():
 
     if credentials is None:
         # Run through the OAuth flow and retrieve credentials
-        client_id, client_secret = load_configs()
-        flow = OAuth2WebServerFlow(client_id, client_secret, SHEETS_OAUTH_SCOPE, REDIRECT_URI)
+        # client_id, client_secret = load_configs()
+        flow = OAuth2WebServerFlow(config['drive']['client_id'], config['drive']['client_secret'], OAUTH_SCOPE, REDIRECT_URI)
         authorize_url = flow.step1_get_authorize_url()
         print('Go to the following link in your browser: ' + authorize_url)
         code = input('Enter verification code: ').strip()
@@ -98,7 +98,7 @@ def _download_file(drive_service, download_url, outfile):
 
 
 def download_file(outfile, fileid):
-    drive_service = init_sheet_service()
+    drive_service = init_drive_service()
     for item in list_files(drive_service):
         if fileid == item.get('id'):
             if 'downloadUrl' in item:
@@ -124,9 +124,26 @@ def get_sheet_values(spreadsheet_id, range_):
     return response
 
 
-def update_sheet_values(spreadsheet_id, range_, value_input_option, body):
+def get_sheet_value(spreadsheet_id, range_):
+    response = get_sheet_values(spreadsheet_id, range_)
+    try:
+        return response['values'][0][0]
+    except:
+        return ''
+
+
+def update_sheet_values(spreadsheet_id, range_, values):
     sheet_service = init_sheet_service()
-    result = sheet_service.spreadsheets().values().update(spreadsheetId=spreadsheet_id, range=range_,
-                                                          valueInputOption=value_input_option, body=body).execute()
+    body = {'values': values}
+    result = sheet_service.spreadsheets().values().update(spreadsheetId=spreadsheet_id, range=range_, body=body,
+                                                          valueInputOption='USER_ENTERED').execute()
     return result.get('updatedCells')
+
+
+def append_sheet_values(spreadsheet_id, range_, values):
+    sheet_service = init_sheet_service()
+    body = {'values': values}
+    result = sheet_service.spreadsheets().values().append(spreadsheetId=spreadsheet_id, range=range_, body=body,
+                                                          valueInputOption='USER_ENTERED').execute()
+    return result.get('updates').get('updatedCells')
 
