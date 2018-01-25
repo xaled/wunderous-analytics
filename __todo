@@ -2,11 +2,11 @@
     - zapuno restore:
         x sync sheet restore
         x rewire_sync fix
-    - ‎week sync cron
-    - add reward
-    - github
-    - ‎habithub to rewards
-    - ‎week to how.ods
+    x ‎week sync cron
+    x add reward
+    x github
+    x ‎habithub to rewards
+    x ‎week to how.ods
     - ‎weeks trends
     - ‎week create, backup and delete
     - ‎wunder:
