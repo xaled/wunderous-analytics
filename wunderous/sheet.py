@@ -164,7 +164,7 @@ def sync_sheet(spreadsheet_id, sheet, sheet_date):
 
 
 def _work_reward(timestamp, hi, task, period):
-    return [task + '_' + epoch_to_iso8601date(timestamp) + '#' + str(hi), epoch_to_reward(timestamp), 'hour_reward',
+    return [task + '_' + epoch_to_iso8601date(timestamp) + '#' + str(hi+6)+'h', epoch_to_reward(timestamp), 'hour_reward',
             str(period*config['rewards']['multiplicator']), "automatically added by wunderous.sheet"]
 
 
@@ -234,13 +234,11 @@ def get_rewire_rewards():
         for entry in habit['entries']:
             date_epoch = int(rewire_to_epoch(entry['Date']))
             if process_status:
-                # if DAY < t0 - date_epoch < WEEK and entry['Status'] == 'DONE':
-                if t0 - date_epoch < WEEK and entry['Status'] == 'DONE':
+                if DAY < t0 - date_epoch < WEEK and entry['Status'] == 'DONE':
                     rewards.append(_habit_reward(date_epoch, name, multiplicator))
             else:
                 count = float(entry['Actual Count'])
-                # if 2*DAY < t0 - date_epoch < WEEK and count > 0.0:
-                if 0 < t0 - date_epoch < WEEK and count > 0.0:
+                if 2*DAY < t0 - date_epoch < WEEK and count > 0.0:
                     rewards.append(_habit_reward(date_epoch, name, multiplicator * count, count=count, unit=unit))
     return rewards
 
