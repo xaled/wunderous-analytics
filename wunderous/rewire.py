@@ -52,6 +52,7 @@ def parse_file(csvfile):
         habbits.append(habbit)
     return habbits
 
+
 def process_dates(data):
     earlier_day = (int(time.time())/86400)*86400
     for habbit in data:

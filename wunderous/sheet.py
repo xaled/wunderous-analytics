@@ -6,12 +6,13 @@ import re
 import logging
 from kutils.json_min_db import JsonMinConnexion
 
-from wunderous.config import WEEK_OFFSET, DAY, WEEK, MONTHES, CSV_HEADER
+from wunderous.config import WEEK_OFFSET, DAY, WEEK, MONTHES, CSV_HEADER, config
 from wunderous.drive import get_sheet_values, get_sheet_metadata, get_sheet_value, update_sheet_values, \
     append_sheet_values
-from wunderous.utils import save_csv, save_json, output_list, weeksheet_to_epoch, epoch_to_iso8601, epoch_to_how_ods, \
-    epoch_to_reward
-from wunderous.config import config
+from wunderous.utils import save_csv, output_list, weeksheet_to_epoch, epoch_to_iso8601, epoch_to_how_ods, \
+    epoch_to_reward, rewire_to_epoch, epoch_to_iso8601date, iso8601date_to_epoch
+from wunderous.rewire import get_rewire_data
+from wunderous.git import get_git_dates
 logger = logging.getLogger(__name__)
 
 
@@ -163,8 +164,18 @@ def sync_sheet(spreadsheet_id, sheet, sheet_date):
 
 
 def _work_reward(timestamp, hi, task, period):
-    return [task + '_' + str(timestamp) + '#' + str(hi), epoch_to_reward(timestamp), 'hour_reward',
+    return [task + '_' + epoch_to_iso8601date(timestamp) + '#' + str(hi), epoch_to_reward(timestamp), 'hour_reward',
             str(period*config['rewards']['multiplicator']), "automatically added by wunderous.sheet"]
+
+
+def _habit_reward(timestamp, habitname, value, count=1, unit='times'):
+    return ["%s_%s#%s%s" % (habitname, epoch_to_iso8601date(timestamp), str(count), unit), epoch_to_reward(timestamp),
+            'habit_reward', str(value), "automatically added by wunderous.sheet"]
+
+def _git_reward(date, timestamp):
+    return ["git_%s" % (date), epoch_to_reward(timestamp), 'git_reward', config['rewards']['git']['multiplicator'],
+            "automatically added by wunderous.sheet"]
+
 
 def _is_home(di, hi): # home or work
     if 0 < di < 6 and 1 < hi < 10:
@@ -179,11 +190,59 @@ def check_task_for_reward(task):
 
 
 def get_git_rewards():
-    return []
+    rewards = list()
+    t0 = time.time()
+    dates_lines = get_git_dates()
+    for date in dates_lines:
+        date_epoch = iso8601date_to_epoch(date)
+        if t0 - date_epoch < WEEK:
+            rewards.append(_git_reward(date, date_epoch))
+    return rewards
+
+
+def _get_habit_type(habit):
+    try:
+        if habit['Name'] in config['rewards']['rewire']['custom']:
+            return config['rewards']['rewire']['custom'][habit['Name']]['process_status'], \
+                   config['rewards']['rewire']['custom'][habit['Name']]['multiplicator']
+    except:
+        pass
+
+    try:
+        if habit['Unit Name'] in config['rewards']['rewire']['custom_unit']:
+            return config['rewards']['rewire']['custom_unit'][habit['Unit Name']]['process_status'], \
+                   config['rewards']['rewire']['custom_unit'][habit['Unit Name']]['multiplicator']
+    except:
+        pass
+    multiplicator = config['rewards']['rewire']['multiplicator']
+    target_count = float(habit['Target Count'])
+    if target_count > 0.0:
+        return False, multiplicator / target_count
+    else:
+        return True, multiplicator
 
 
 def get_rewire_rewards():
-    return []
+    rewards = list()
+    rewire_data = get_rewire_data(True)
+    t0 = time.time()
+    #list_day = parse_daily(data)
+    for habit in rewire_data:
+        name = habit['Name']
+        unit = habit['Unit Name']
+        process_status, multiplicator = _get_habit_type(habit)
+        for entry in habit['entries']:
+            date_epoch = int(rewire_to_epoch(entry['Date']))
+            if process_status:
+                # if DAY < t0 - date_epoch < WEEK and entry['Status'] == 'DONE':
+                if t0 - date_epoch < WEEK and entry['Status'] == 'DONE':
+                    rewards.append(_habit_reward(date_epoch, name, multiplicator))
+            else:
+                count = float(entry['Actual Count'])
+                # if 2*DAY < t0 - date_epoch < WEEK and count > 0.0:
+                if 0 < t0 - date_epoch < WEEK and count > 0.0:
+                    rewards.append(_habit_reward(date_epoch, name, multiplicator * count, count=count, unit=unit))
+    return rewards
 
 
 def get_new_rewards(rewards, old_rewards):
