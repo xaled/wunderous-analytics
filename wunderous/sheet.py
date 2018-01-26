@@ -164,17 +164,20 @@ def sync_sheet(spreadsheet_id, sheet, sheet_date):
 
 
 def _work_reward(timestamp, hi, task, period):
-    return [task + '_' + epoch_to_iso8601date(timestamp) + '#' + str(hi+6)+'h', epoch_to_reward(timestamp), 'hour_reward',
-            str(period*config['rewards']['multiplicator']), "automatically added by wunderous.sheet"]
+    return [task + '_' + epoch_to_iso8601date(timestamp) + '#' + str(hi+6)+'h', epoch_to_reward(timestamp),
+            'hour_reward', str(period*config['rewards']['multiplicator']),
+            "automatically added by wunderous.sheet on %s" % epoch_to_iso8601date(time.time())]
 
 
 def _habit_reward(timestamp, habitname, value, count=1, unit='times'):
     return ["%s_%s#%s%s" % (habitname, epoch_to_iso8601date(timestamp), str(count), unit), epoch_to_reward(timestamp),
-            'habit_reward', str(value), "automatically added by wunderous.sheet"]
+            'habit_reward', str(value),
+            "automatically added by wunderous.sheet on %s" % epoch_to_iso8601date(time.time())]
+
 
 def _git_reward(date, timestamp):
     return ["git_%s" % (date), epoch_to_reward(timestamp), 'git_reward', config['rewards']['git']['multiplicator'],
-            "automatically added by wunderous.sheet"]
+            "automatically added by wunderous.sheet on %s" % epoch_to_iso8601date(time.time())]
 
 
 def _is_home(di, hi): # home or work
