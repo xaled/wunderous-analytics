@@ -55,6 +55,11 @@ class WindowActivityTracker:
             logger.error('Exception while tracking windows activity', exc_info=True)
             raise
         finally:
+            try:
+                if self.current_activity is not None:
+                    yield self.finished_activity(time.time())
+            except:
+                pass
             logger.info('stopping window activity tracking')
 
 
@@ -75,12 +80,19 @@ def main(spreadsheet_id):
     tracker = WindowActivityTracker()
     entries = list()
     last_sync = time.time()
-    for activity in tracker.track():
-        entries.append([hostname, activity[0], activity[1],
-                        format_utc_time(activity[2], TIMEDATE_FORMAT), format_utc_time(activity[3], TIMEDATE_FORMAT),
-                        str(datetime.timedelta(seconds=int(activity[4])))])
-        print(entries[-1])
-        if time.time() - last_sync > SYNC_INTERVAL:
-            sync(entries, spreadsheet_id)
-            entries.clear()
-            last_sync = time.time()
+    try:
+        for activity in tracker.track():
+            entries.append([hostname, activity[0], activity[1],
+                            format_utc_time(activity[2], TIMEDATE_FORMAT), format_utc_time(activity[3], TIMEDATE_FORMAT),
+                            str(datetime.timedelta(seconds=int(activity[4])))])
+            print(entries[-1])
+            if time.time() - last_sync > SYNC_INTERVAL:
+                sync(entries, spreadsheet_id)
+                entries.clear()
+                last_sync = time.time()
+    finally:
+        try:
+            if len(entries) > 0:
+                sync(entries, spreadsheet_id)
+        except:
+            pass
